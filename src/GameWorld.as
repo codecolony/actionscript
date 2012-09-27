@@ -42,6 +42,7 @@ package
 		private var white_selected_pos:int = -1;
 		private var move_cancelled:int = -1;
 		private var move_rollback:int = -1;
+		private var winblack:int = -1;
 		
 		//private var turn_text:Text;  //text for display
 		//private var turn_text_image:Image;  //text for display
@@ -69,6 +70,10 @@ package
 		private var prev_move_index:int = -1;
 		private var game_finished:int = 0;
 		private var winning_solution:int  = -1;
+		//private var old_black_move:int = -1;
+		//private var old_old_black_move:int = -1;
+		private var black_trap:int = -1;
+		private var old_prev_index:int = -1;
 		
 		private var myTimer:Timer;
 		
@@ -595,22 +600,91 @@ package
 				return 2;
 			}
 			
-			/*if (game_state == 2 && hasMoves(prev_move_index) == 0) {
-						return 0;
-					}*/
-					
 			var randFreeSpot:int = -1;
+			var winwhite:int = -1;
+			
 			if (player == 1 && game_state == 1) {  //game in initial marble distribution state
-				randFreeSpot = getRandomFreeSpot();
+				
+				//check if white has winning chance.
+				
+				//check if black has winning chance.
+				
+				//randFreeSpot = getRandomFreeSpot();
+				
+				//randFreeSpot  = getWinningMove(turn);
+				randFreeSpot  = checkInitialWhiteWinning();
+				
+				if (randFreeSpot == -1) { //if there is no winning move then check if opponent is winning and try to block him.
+					if(blackcount<3){
+						winwhite =  isBlackWinning(); //isblackwinning only if still black moves left
+					}
+					else {
+						winwhite = checkBlackWinning(); //check that ths is not already occupied.
+						if (positions[winwhite] != 2 && winwhite != -1) 
+						{
+							winwhite = -1;
+						}
+					}
+					if (winwhite != -1)  //then opponent has a chance to win 
+					{
+						//winwhite = getWinningMove(0, winwhite);
+						//randFreeSpot = getBlockingWhite(winwhite); //create blocking white marble
+						randFreeSpot = winwhite;
+					}
+					else {
+						
+						randFreeSpot  = getRandomFreeSpot();
+					}
+				}
+				
 				x = -1;
 				y = -1;
 			}
 			else if (player == 1 && game_state == 2) { //game in player marbles moving state
-				randFreeSpot = getWinningMove(white_selected_pos);
-				if (randFreeSpot == -1) 
-				{
-					randFreeSpot = getRandomValidMove(white_selected_pos);
-				}
+				
+				
+				
+					if (black_trap == 1) 
+					{
+						//randFreeSpot = prev_move_index;
+						randFreeSpot = old_prev_index;
+						black_trap = 0;
+					}
+					else {
+							
+							//here check if black is about to win, if yes then block the spot.
+							
+							if (winblack != -1) 
+							{
+								if (hasMoves(white_selected_pos, winblack) == 1)
+								randFreeSpot = winblack;
+								else
+								randFreeSpot = getRandomValidMove(white_selected_pos);
+								winblack = -1;
+							}
+							else {
+								/// first we still need to check if we have a direct winning 
+								
+								randFreeSpot = getWinningMove(1, white_selected_pos); //periphery win but chose 4?!
+								
+								if (positions[white_selected_pos]==2) 
+								{
+									positions[white_selected_pos] == 1
+									randFreeSpot = getWinningMove(1, white_selected_pos); 
+								}
+								if (randFreeSpot == -1) 
+								{
+									if (old_prev_index != -1) {
+										randFreeSpot = old_prev_index;
+									}
+									else {
+										randFreeSpot = getRandomValidMove(white_selected_pos);
+									}
+								}
+							}
+						
+					}
+				
 				
 				x = -1;
 				y = -1;
@@ -619,6 +693,11 @@ package
 			//(33,35,95,95)   (194,34,290,84)  (375,34,442,96)
 			
 			var retval:int = 0;
+			/*if (player == 1) 
+			{
+				old_old_black_move = old_black_move;
+			}*/
+			
 			if ((x>33 && x<95) && (y>35 && y<95)|| randFreeSpot == 0) //
 
 			{
@@ -637,9 +716,12 @@ package
 						//white.y = 36;
 						moveWhiteToDestination(white, 35, 36);
 						objects[0] = white;
+						//old_black_move = -1;
 					}
 					else {
 						objects[0] = black;
+
+						//old_black_move = 0;
 					}
 					
 				}
@@ -661,9 +743,11 @@ package
 						//white.y = 34;
 						moveWhiteToDestination(white, 214, 34);
 						objects[1] = white;
+						//old_black_move = -1;
 					}
 					else {
 						objects[1] = black;
+						//old_black_move = 1;
 					}
 					
 				}
@@ -685,9 +769,11 @@ package
 						//white.y = 36;
 						moveWhiteToDestination(white, 388, 36);
 						objects[2] = white;
+						//old_black_move = -1;
 					}
 					else {
 						objects[2] = black;
+						//old_black_move = 2;
 					}
 					
 				}
@@ -712,9 +798,11 @@ package
 						//white.y = 202;
 						moveWhiteToDestination(white, 31, 202);
 						objects[3] = white;
+						//old_black_move = -1;
 					}
 					else {
 						objects[3] = black;
+						//old_black_move = 3;
 					}
 					
 				}
@@ -736,9 +824,11 @@ package
 						//white.y = 200;
 						moveWhiteToDestination(white, 210, 200);
 						objects[4] = white;
+						//old_black_move = -1;
 					}
 					else {
 						objects[4] = black;
+						//old_black_move = 4;
 					}
 					
 				}
@@ -758,11 +848,13 @@ package
 					{
 						//white.x = 405;
 						//white.y = 212;
-						moveWhiteToDestination(white, 405, 212);
+						moveWhiteToDestination(white, 405, 205);
 						objects[5] = white;
+						//old_black_move = -1;
 					}
 					else {
 						objects[5] = black;
+						//old_black_move = 5;
 					}
 					
 				}
@@ -786,9 +878,11 @@ package
 						//white.y = 374;
 						moveWhiteToDestination(white, 26, 374);
 						objects[6] = white;
+						//old_black_move = -1;
 					}
 					else {
 						objects[6] = black;
+						//old_black_move = 6;
 					}
 					
 				}
@@ -808,11 +902,13 @@ package
 					{
 						//white.x = 200;
 						//white.y = 385;
-						moveWhiteToDestination(white, 200, 385);
+						moveWhiteToDestination(white, 210, 385);
 						objects[7] = white;
+						//old_black_move = -1;
 					}
 					else {
 						objects[7] = black;
+						//old_black_move = 7;
 					}
 					
 				}
@@ -834,9 +930,11 @@ package
 						//white.y = 384;
 						moveWhiteToDestination(white, 400, 384);
 						objects[8] = white;
+						//old_black_move = -1;
 					}
 					else {
 						objects[8] = black;
+						//old_black_move = 8;
 					}
 					
 				}
@@ -937,6 +1035,8 @@ package
 		private function checkMoveAllowed(x:int, y:int, turn:int):int { //move
 			//(33,35,95,95)   (194,34,290,84)  (375,34,442,96)
 			
+			
+			
 			if (game_finished == 1) 
 			{
 				handleMenu();
@@ -956,18 +1056,76 @@ package
 			var randFreeSpot:int = -1;
 			
 			if (turn == 1 && game_state == 1) {  //game in initial marble distribution state
+
+				//this code is not used?
+				
 				randFreeSpot = getRandomFreeSpot();
 				x = -1;
 				y = -1;
 			}
 			else if (turn == 1 && game_state == 2) { //game in player marbles moving state
-				randFreeSpot  = getWinningMove();
-				if(randFreeSpot == -1)
-					randFreeSpot  = getBestWhiteMarble();
-					
-				white_selected_pos = randFreeSpot;
+				
+				randFreeSpot  = getWinningMove(turn);
+				if(randFreeSpot == -1){ //if there is no winning move then check if opponent is winning and try to block him.
+					winblack = isOpponentWining(0); //returns blank spot to be blocked!
+					//again we need to check if winblack is already occupied.
+					if (positions[winblack] != 2 && winblack != -1) 
+					{
+						winblack = -1;
+					}
+					if (winblack != -1)  //then opponent has a chance to win and can be blocked if winblack != -1
+					{
+						//winblack = getWinningMove(0, winblack);
+						randFreeSpot = getBlockingWhite(winblack);
+						if (randFreeSpot == -1) //opponent has a chance but no white moves to block!
+						{
+							//randFreeSpot = getRandomValidMove(white_selected_pos);// careful! //return -1 if white_selected_pos == -1
+							//if (randFreeSpot == -1) 
+							//{
+								//this call gave me middle position occupied with black!! wrong!
+								//randFreeSpot  = getBestWhiteMarble(); // can still be -1 then no option but to select a random valid white
+								//if (randFreeSpot == -1) 
+								//{
+									randFreeSpot = getRandWhiteMarble();
+								//}
+								
+							//}
+						}
+						else {
+							if (winblack != -1 && randFreeSpot != -1) 
+							{
+								white_selected_pos = randFreeSpot;
+							}
+							else{
+								randFreeSpot = prev_move_index  ; // no moves just trace the path of black
+							}
+						}
+					}
+					else{
+						//randFreeSpot  = getBestWhiteMarble();
+						if (prev_move_index != -1) {
+							old_prev_index = prev_move_index  ;
+							randFreeSpot = getBlockingWhite(prev_move_index);  //this is where blocking white marble is
+							black_trap = 1;
+							if (randFreeSpot == -1) 
+							{
+								randFreeSpot = getRandomValidMove(white_selected_pos); //?
+								black_trap = 1;
+							}
+						}
+						else {
+							randFreeSpot = getRandomValidMove(white_selected_pos); //?
+						}
+					}
+				}
+				else {
+					//check if old black marble moved in periphery
+					white_selected_pos = randFreeSpot;
+				}
 				x = -1;
 				y = -1;
+				
+				white_selected_pos = randFreeSpot;
 			}
 			
 			var retval:int = 0;
@@ -1198,7 +1356,7 @@ package
 				}
 				
 				else if (Input.mouseX > 470 &&  Input.mouseX < 560 && Input.mouseY > 240 && Input.mouseY < 270) {
-					//game rules here.
+					FP.world = new RulesWorld();
 				}
 			}
 		}
@@ -1306,6 +1464,11 @@ package
 		}
 		
 		private function getRandomValidMove(pos:int):int {
+			
+			if (pos == -1) 
+			{
+				return -1;
+			}
 			var ret:int = -1;
 			var winret:int = -1; //winning return
 			var temp:int = 0;
@@ -1344,10 +1507,10 @@ package
 				}
 				
 				//check if I need to stop opponent winning.
-				if (ret == 0) 
-				{
-					ret = 4;  //just return last one now.
-				}
+				//if (ret == 0) 
+				//{
+				//	ret = 4;  //just return last one now.
+				//}
 			}
 			else if (pos == 1)
 			{
@@ -1646,7 +1809,7 @@ package
 			return ret;
 		}
 		
-		private function getWinningMove(pos:int = -1 ):int { //-1 means check all positions
+		private function getWinningMove(turn:int,pos:int = -1):int { //-1 means check all positions
 			var ret:int = -1;
 			var newpos:Array = positions.slice();
 			var player:int;
@@ -1654,11 +1817,13 @@ package
 			
 			if (pos==-1) 
 			{
-				player = 1;
+				player = turn; 
 			}
 			else {
-				player = 2;
-				
+				if(turn == 1)
+				player = 2; //revert it at the end.
+				//else
+				//player = 0;
 			}
 			//newpos[pos] = 1;  //white in new position
 				
@@ -1668,21 +1833,29 @@ package
 				//check for winning first
 				if (pos != -1) 
 				{
-					positions[pos] = 1; //revert back at the end.
+					positions[pos] = player; //revert back at the end.
 				}
 				if (boardmap[1][1] == 0) 
 				{
-					
+					if (game_state==2){
 					if(pos != -1)
 						{ret = 4;  middle = 4; } //checked.
-					else 
-						ret = 0;
-					newpos[4] = 1;
-					newpos[0] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					//else 
+						//ret = 0;
+						
+						newpos[0] = 2;
+					}
+					newpos[4] = player;
+					
+						
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2; return ret;
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 4;
 						}
 						return 0;  //checked.
 					}
@@ -1691,17 +1864,25 @@ package
 				newpos = positions.slice();
 				//newpos[0] = 1;
 				if (boardmap[0][1] == 0) {
-					
+					if (game_state==2){
 					if(pos != -1)
 						ret = 1;  //checked.
-					else 
-						ret = 0;
-					newpos[1] = 1;
-					newpos[0] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					//else 
+						//ret = 0;
+						
+						newpos[0] = 2;
+					}
+					newpos[1] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2; return ret;
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 1;
 						}
 						return 0;  //checked.
 					}
@@ -1710,17 +1891,25 @@ package
 				//newpos[0] = 1;
 				if (boardmap[1][0]==0)  
 				{
-					
+					if (game_state==2){
 					if(pos != -1)
 						ret = 3;  //checked.
-					else 
-						ret = 0;
-					newpos[3] = 1;
-					newpos[0] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					//else 
+						//ret = 0;
+						
+						newpos[0] = 2;
+					}
+					newpos[3] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2; return ret;
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 3;
 						}
 						return 0;  //checked.
 					}
@@ -1731,23 +1920,31 @@ package
 			{
 				if (pos != -1) 
 				{
-					positions[pos] = 1; //revert back at the end.
+					positions[pos] = player; //revert back at the end.
 				}
 				newpos = positions.slice();
 				//newpos[1] = 1;
 				if (boardmap[1][1] == 0) 
 				{
-					
+					if (game_state==2){
 					if(pos != -1)
 						{ret = 4; middle = 4;} //checked.
-					else 
-						ret = 1;
-					newpos[4] = 1;
-					newpos[0] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					//else 
+						//ret = 1;
+						
+						newpos[1] = 2;
+					}
+					newpos[4] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2; return ret;
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 4;
 						}
 						return 1;  //checked.
 					}
@@ -1755,17 +1952,25 @@ package
 				newpos = positions.slice();
 				//newpos[1] = 1;
 				if (boardmap[0][0] == 0) {
-					
+					if (game_state==2){
 					if(pos != -1)
 						ret = 0;  //checked.
-					else 
-						ret = 1;
-					newpos[0] = 1;
-					newpos[0] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					//else 
+						//ret = 1;
+						
+						newpos[1] = 2;
+					}
+					newpos[0] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2; return ret;
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 0;
 						}
 						return 1;  //checked.
 					}
@@ -1774,17 +1979,25 @@ package
 				//newpos[1] = 1;
 				if (boardmap[0][2]==0) 
 				{
-					
+					if (game_state==2){
 					if(pos != -1)
 						ret = 2;  //checked.
-					else 
-						ret = 1;
-					newpos[2] = 1;
-					newpos[0] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					//else 
+						//ret = 1;
+						
+						newpos[1] = 2;
+					}
+					newpos[2] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2; return ret;
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 2;
 						}
 						return 1;  //checked.
 					}
@@ -1796,23 +2009,31 @@ package
 			{
 				if (pos != -1) 
 				{
-					positions[pos] = 1; //revert back at the end.
+					positions[pos] = player; //revert back at the end.
 				}
 				newpos = positions.slice();
 				//newpos[2] = 1;
 				if (boardmap[1][1] == 0) 
 				{
-					
+					if (game_state==2){
 					if(pos != -1)
 						{ret = 4; middle = 4;} //checked.
-					else 
-						ret = 2;
-					newpos[4] = 1;
-					newpos[2] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					//else 
+						//ret = 2;
+						
+						newpos[2] = 2;
+					}
+					newpos[4] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2; return ret;
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 4;
 						}
 						return 2;  //checked.
 					}
@@ -1820,17 +2041,25 @@ package
 				newpos = positions.slice();
 				//newpos[2] = 1;
 				if (boardmap[0][1] == 0) {
-					
+					if (game_state==2){
 					if(pos != -1)
 						ret = 1;  //checked.
-					else 
-						ret = 2;
-					newpos[1] = 1;
-					newpos[2] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					//else 
+						//ret = 2;
+						
+						newpos[2] = 2;
+					}
+					newpos[1] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2; return ret;
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 1;
 						}
 						return 2;  //checked.
 					}
@@ -1839,17 +2068,25 @@ package
 				//newpos[2] = 1;
 				if (boardmap[1][2]==0)  
 				{
-					
+					if (game_state==2){
 					if(pos != -1)
 						ret = 5;  //checked.
-					else 
-						ret = 2;
-					newpos[5] = 1;
-					newpos[2] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					//else 
+						//ret = 2;
+						
+						newpos[2] = 2;
+					}
+					newpos[5] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2; return ret;
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 5;
 						}
 						return 2;  //checked.
 					}
@@ -1861,23 +2098,31 @@ package
 			{
 				if (pos != -1) 
 				{
-					positions[pos] = 1; //revert back at the end.
+					positions[pos] = player; //revert back at the end.
 				}
 				newpos = positions.slice();
 				//newpos[3] = 1;
 				if (boardmap[1][1] == 0) 
 				{
-					
+					if (game_state==2){
 					if(pos != -1)
 						{ret = 4;  middle = 4;}//checked.
-					else 
-						ret = 3;
-					newpos[4] = 1;
-					newpos[3] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					//else 
+						//ret = 3;
+						
+						newpos[3] = 2;
+					}
+					newpos[4] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2; return ret;
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 4;
 						}
 						return 3;  //checked.
 					}
@@ -1885,17 +2130,25 @@ package
 				newpos = positions.slice();
 				//newpos[3] = 1;
 				if (boardmap[0][0] == 0) {
-					
+					if (game_state==2){
 					if(pos != -1)
 						ret = 0;  //checked.
-					else 
-						ret = 3;
-					newpos[0] = 1;
-					newpos[3] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					//else 
+						//ret = 3;
+						
+						newpos[3] = 2;
+					}
+					newpos[0] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2; return ret;
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 0;
 						}
 						return 3;  //checked.
 					}
@@ -1904,199 +2157,62 @@ package
 				//newpos[3] = 1;
 				if (boardmap[2][0]==0)  
 				{
-					
+					if (game_state==2){
 					if(pos != -1)
 						ret = 7;  //checked.
-					else 
-						ret = 3;
-					newpos[7] = 1;
-					newpos[3] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					//else 
+						//ret = 3;
+						
+						newpos[3] = 2;
+					}
+					newpos[7] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2; return ret;
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 7;
 						}
 						return 3;  //checked.
 					}
 				}
 			}
 			
-			if ((pos == 4 || pos == -1) && positions[4]==player)
-			{
-				if (pos != -1) 
-				{
-					positions[pos] = 1; //revert back at the end.
-				}
-				newpos = positions.slice();
-				//newpos[4] = 1;
-				//need some awesome logic here. to be revisited
-				if (boardmap[0][0] == 0) 
-				{
-					
-					if(pos != -1)
-						ret = 0;  //checked.
-					else 
-						ret = 4;
-					newpos[0] = 1;
-					newpos[4] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
-						if (pos != -1) 
-						{
-							positions[pos] = 2; return ret;
-						}
-						return 4;  //checked.
-					}
-				}
-				newpos = positions.slice();
-				//newpos[4] = 1;
-				if (boardmap[0][1] == 0) {
-					
-					if(pos != -1)
-						ret = 1;  //checked.
-					else 
-						ret = 4;
-					newpos[1] = 1;
-					newpos[4] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
-						if (pos != -1) 
-						{
-							positions[pos] = 2; return ret;
-						}
-						return 4;  //checked.
-					}
-				}
-				newpos = positions.slice();
-				//newpos[4] = 1;
-				if (boardmap[0][2] == 0) {
-					
-					if(pos != -1)
-						ret = 2;  //checked.
-					else 
-						ret = 4;
-					newpos[2] = 1;
-					newpos[4] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
-						if (pos != -1) 
-						{
-							positions[pos] = 2; return ret;
-						}
-						return 4;  //checked.
-					}
-				}
-				newpos = positions.slice();
-				//newpos[4] = 1;
-				if (boardmap[1][0]==0)  
-				{
-					
-					if(pos != -1)
-						ret = 3;  //checked.
-					else 
-						ret = 4;
-					newpos[3] = 1;
-					newpos[4] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
-						if (pos != -1) 
-						{
-							positions[pos] = 2; return ret;
-						}
-						return 4;  //checked.
-					}
-				}
-				newpos = positions.slice();
-				//newpos[4] = 1;
-				if (boardmap[1][2] == 0) {
-					
-					if(pos != -1)
-						ret = 5;  //checked.
-					else 
-						ret = 4;
-					newpos[5] = 1;
-					newpos[4] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
-						if (pos != -1) 
-						{
-							positions[pos] = 2; return ret;
-						}
-						return 4;  //checked.
-					}
-				}
-				newpos = positions.slice();
-				//newpos[4] = 1;
-				if (boardmap[2][0] == 0) {
-					
-					if(pos != -1)
-						ret = 6;  //checked.
-					else 
-						ret = 4;
-					newpos[6] = 1;
-					newpos[4] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
-						if (pos != -1) 
-						{
-							positions[pos] = 2; return ret;
-						}
-						return 4;  //checked.
-					}
-				}
-				newpos = positions.slice();
-				//newpos[4] = 1;
-				if (boardmap[2][1] == 0) {
-					
-					if(pos != -1)
-						ret = 7;  //checked.
-					else 
-						ret = 4;
-					newpos[7] = 1;
-					newpos[4] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
-						if (pos != -1) 
-						{
-							positions[pos] = 2; return ret;
-						}
-						return 4;  //checked.
-					}
-				}
-				newpos = positions.slice();
-				//newpos[4] = 1;
-				if (boardmap[2][2] == 0) {
-					
-					if(pos != -1)
-						ret = 8;  //checked.
-					else 
-						ret = 4;
-					newpos[8] = 1;
-					newpos[4] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
-						if (pos != -1) 
-						{
-							positions[pos] = 2; return ret;
-						}
-						return 4;  //checked.
-					}
-				}
-			}
+			
 			
 			if ((pos == 5 || pos == -1) && positions[5]==player)
 			{
 				if (pos != -1) 
 				{
-					positions[pos] = 1; //revert back at the end.
+					positions[pos] = player; //revert back at the end.
 				}
 				newpos = positions.slice();
 				//newpos[5] = 1;
 				if (boardmap[1][1] == 0) 
 				{
-					
+					if (game_state==2){
 					if(pos != -1)
 						{ret = 4; middle = 4;} //checked.
-					else 
-						ret = 5;
-					newpos[4] = 1;
-					newpos[5] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					//else 
+						//ret = 5;
+						
+						newpos[5] = 2;
+					}
+					newpos[4] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2; return ret;
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 4;
 						}
 						return 5;  //checked.
 					}
@@ -2104,17 +2220,25 @@ package
 				newpos = positions.slice();
 				//newpos[5] = 1;
 				if (boardmap[0][2] == 0) {
-					
+					if (game_state==2){
 					if(pos != -1)
 						ret = 2;  //checked.
-					else 
-						ret = 5;
-					newpos[2] = 1;
-					newpos[5] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					//else 
+						//ret = 5;
+						
+						newpos[5] = 2;
+					}
+					newpos[2] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2; return ret;
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 2;
 						}
 						return 5;  //checked.
 					}
@@ -2123,17 +2247,25 @@ package
 				//newpos[5] = 1;
 				if (boardmap[2][2]==0)  
 				{
-					
+					if (game_state==2){
 					if(pos != -1)
 						ret = 8;  //checked.
-					else 
-						ret = 5;
-					newpos[8] = 1;
-					newpos[5] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					//else 
+						//ret = 5;
+						
+						newpos[5] = 2;
+					}
+					newpos[8] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2; return ret;
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 8;
 						}
 						return 5;  //checked.
 					}
@@ -2144,23 +2276,31 @@ package
 			{
 				if (pos != -1) 
 				{
-					positions[pos] = 1; //revert back at the end.
+					positions[pos] = player; //revert back at the end.
 				}
 				newpos = positions.slice();
 				//newpos[6] = 1;
 				if (boardmap[1][1] == 0) 
 				{
-					
+					if (game_state==2){
 					if(pos != -1)
 						{ret = 4; middle = 4;} //checked.
-					else 
-						ret = 6;
-					newpos[4] = 1;
-					newpos[6] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					//else 
+						//ret = 6;
+						
+						newpos[6] = 2;
+					}
+					newpos[4] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2; return ret;
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 4;
 						}
 						return 6;  //checked.
 					}
@@ -2168,17 +2308,25 @@ package
 				newpos = positions.slice();
 				//newpos[6] = 1;
 				if (boardmap[2][1] == 0) {
-					
+					if (game_state==2){
 					if(pos != -1)
 						ret = 7;  //checked.
-					else 
-						ret = 6;
-					newpos[7] = 1;
-					newpos[6] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					//else 
+						//ret = 6;
+						
+						newpos[6] = 2;
+					}
+					newpos[7] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2; return ret;
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 7;
 						}
 						return 6;  //checked.
 					}
@@ -2187,17 +2335,25 @@ package
 				//newpos[6] = 1;
 				if (boardmap[1][0]==0)  
 				{
-					
+					if (game_state==2){
 					if(pos != -1)
 						ret = 3;  //checked.
-					else 
-						ret = 6;
-					newpos[3] = 1;
-					newpos[6] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					//else 
+						//ret = 6;
+						
+						newpos[6] = 2;
+					}
+					newpos[3] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2; return ret;
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 3;
 						}
 						return 6;  //checked.
 					}
@@ -2208,23 +2364,31 @@ package
 			{
 				if (pos != -1) 
 				{
-					positions[pos] = 1; //revert back at the end.
+					positions[pos] = player; //revert back at the end.
 				}
 				newpos = positions.slice();
 				//newpos[7] = 1;
 				if (boardmap[1][1] == 0) 
 				{
-					
+					if (game_state==2){
 					if(pos != -1)
 						{ret = 4; middle = 4;} //checked.
-					else 
-						ret = 7;
-					newpos[4] = 1;
-					newpos[7] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					//else 
+						//ret = 7;
+						
+						newpos[7] = 2;
+					}
+					newpos[4] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2; return ret;
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 4;
 						}
 						return 7;  //checked.
 					}
@@ -2232,17 +2396,25 @@ package
 				newpos = positions.slice();
 				//newpos[7] = 1;
 				if (boardmap[2][2] == 0) {
-					
+					if (game_state==2){
 					if(pos != -1)
 						ret = 8;  //checked.
-					else 
-						ret = 7;
-					newpos[8] = 1;
-					newpos[7] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					//else 
+						//ret = 7;
+						
+						newpos[7] = 2;
+					}
+					newpos[8] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2; return ret;
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 8;
 						}
 						return 7;  //checked.
 					}
@@ -2251,17 +2423,25 @@ package
 				//newpos[7] = 1;
 				if (boardmap[2][0]==0)  
 				{
-					
+					if (game_state==2){
 					if(pos != -1)
 						ret = 6;  //checked.
-					else 
-						ret = 7;
-					newpos[6] = 1;
-					newpos[7] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					//else 
+						//ret = 7;
+						
+						newpos[7] = 2;
+					}
+					newpos[6] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2; return ret;
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 6;
 						}
 						return 7;  //checked.
 					}
@@ -2272,24 +2452,33 @@ package
 			{
 				if (pos != -1) 
 				{
-					positions[pos] = 1; //revert back at the end.
+					positions[pos] = player; //revert back at the end.
 				}
 				newpos = positions.slice();
 				//newpos[8] = 1;
 				
 				if (boardmap[1][1] == 0) 
 				{
+					if (game_state==2){
 					if(pos != -1)
 						{ret = 4;  middle = 4;}//checked.
-					else 
-						ret = 8;
-					newpos[4] = 1;
-					newpos[8] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					//else 
+						//ret = 8;
+						
+						newpos[8] = 2;
+					}
+					newpos[4] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2;
+							positions[pos] = player;
 							return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 4;
 						}
 						return 8;  //checked.
 					}
@@ -2297,18 +2486,26 @@ package
 				newpos = positions.slice();
 				//newpos[8] = 1;
 				if (boardmap[2][1] == 0) {
+					if (game_state==2){
 					if(pos != -1)
 						ret = 7;  //checked.
-					else 
-						ret = 8;
+					//else 
+						//ret = 8;
+						
+						newpos[8] = 2;
+					}
+					newpos[7] = player;
 					
-					newpos[7] = 1;
-					newpos[8] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2;
+							positions[pos] = player;
 							return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 7;
 						}
 						return 8;  //checked.
 					}
@@ -2316,33 +2513,600 @@ package
 				newpos = positions.slice();
 				//newpos[8] = 1;
 				if (boardmap[1][2]==0)  
-				{
+				{if (game_state==2){
 					if(pos != -1)
 						ret = 5;  //checked.
-					else 
-						ret = 8;
-					
-					newpos[5] = 1;
+					//else 
+						//ret = 8;
+						
 					newpos[8] = 2;
-					if (evaluateWinner(1, newpos) == 1) {
+				}
+					newpos[5] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
 						if (pos != -1) 
 						{
-							positions[pos] = 2;
+							positions[pos] = player;
 							return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 5;
 						}
 						return 8;  //checked.
 					}
 				}
 			}
+			
+			if ((pos == 4 || pos == -1) && positions[4]==player)
+			{
+				if (pos != -1) 
+				{
+					positions[pos] = player; //revert back at the end.
+				}
+				newpos = positions.slice();
+				//newpos[4] = 1;
+				//need some awesome logic here. to be revisited
+				if (boardmap[0][0] == 0) 
+				{
+					if (game_state==2){
+					if(pos != -1)
+						ret = 0;  //checked.
+					//else 
+						//ret = 4;
+						
+						newpos[4] = 2;
+					}
+					newpos[0] = player;
+					
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
+						if (pos != -1) 
+						{
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 0;
+						}
+						return 4;  //checked.
+					}
+				}
+				newpos = positions.slice();
+				//newpos[4] = 1;
+				if (boardmap[0][1] == 0) {
+					if (game_state==2){
+					if(pos != -1)
+						ret = 1;  //checked.
+					//else 
+						//ret = 4;
+						
+						newpos[4] = 2;
+					}
+					newpos[1] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
+						if (pos != -1) 
+						{
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 1;
+						}
+						return 4;  //checked.
+					}
+				}
+				newpos = positions.slice();
+				//newpos[4] = 1;
+				if (boardmap[0][2] == 0) {
+					if (game_state==2){
+					if(pos != -1)
+						ret = 2;  //checked.
+					//else 
+						//ret = 4;
+						
+						newpos[4] = 2;
+					}
+					newpos[2] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
+						if (pos != -1) 
+						{
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 2;
+						}
+						return 4;  //checked.
+					}
+				}
+				newpos = positions.slice();
+				//newpos[4] = 1;
+				if (boardmap[1][0]==0)  
+				{
+					if (game_state==2){
+					if(pos != -1)
+						ret = 3;  //checked.
+					//else 
+						//ret = 4;
+						
+						newpos[4] = 2;
+					}	
+					newpos[3] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
+						if (pos != -1) 
+						{
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 3;
+						}
+						return 4;  //checked.
+					}
+				}
+				newpos = positions.slice();
+				//newpos[4] = 1;
+				if (boardmap[1][2] == 0) {
+					if (game_state==2){
+					if(pos != -1)
+						ret = 5;  //checked.
+					//else 
+						//ret = 4;
+						
+						newpos[4] = 2;
+					}	
+					newpos[5] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
+						if (pos != -1) 
+						{
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 5;
+						}
+						return 4;  //checked.
+					}
+				}
+				newpos = positions.slice();
+				//newpos[4] = 1;
+				if (boardmap[2][0] == 0) {
+					if (game_state==2){
+					if(pos != -1)
+						ret = 6;  //checked.
+					//else 
+						//ret = 4;
+						
+						newpos[4] = 2;
+					}	
+					newpos[6] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
+						if (pos != -1) 
+						{
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 6;
+						}
+						return 4;  //checked.
+					}
+				}
+				newpos = positions.slice();
+				//newpos[4] = 1;
+				if (boardmap[2][1] == 0) {
+					if (game_state==2){
+					if(pos != -1)
+						ret = 7;  //checked.
+					//else 
+						//ret = 4;
+						
+					newpos[4] = 2;
+					}
+					newpos[7] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
+						if (pos != -1) 
+						{
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 7;
+						}
+						return 4;  //checked.
+					}
+				}
+				newpos = positions.slice();
+				//newpos[4] = 1;
+				if (boardmap[2][2] == 0) {
+					if (game_state==2){
+					if(pos != -1)
+						ret = 8;  //checked.
+					//else 
+						//ret = 4;
+					
+					newpos[4] = 2;
+					}
+					newpos[8] = player;
+					
+					
+					if (evaluateWinner(player, newpos) == 1) {
+						if (pos != -1) 
+						{
+							positions[pos] = player; return ret;
+						}
+						if (pos==-1 && game_state ==1 && player ==0) 
+						{
+							return 8;
+						}
+						return 4;  //checked.
+					}
+				}
+			}
 			if (pos != -1) 
 			{
-				positions[pos] = 2;
+				positions[pos] = player;
 			}
 			if (pos != -1 && middle == 4) 
 			{
 				return 4;
 			}
 			return ret;
+		}
+		
+		private function isOpponentWining(opponent:int):int {
+			var ret:int = -1;
+			
+			var winredobj:int = -1;
+			winredobj = getWinningMove(opponent); //if he is winning then get the block marble
+			if (winredobj != -1) 
+			{
+				/*if(game_state == 2){
+				if (opponent == 0) 
+				{
+					opponent = 1;
+				}
+				else {
+					opponent = 0;
+				}
+			}*/
+				ret = getWinningMove(opponent, winredobj);
+			}
+			
+			return ret;
+			
+		}
+		
+		private function getBlockingWhite(blackpos:int):int {
+			var ret:int = -1;
+			
+			if (blackpos == 0) //
+			{
+				if (positions[1] == 1)
+					return 1;
+				else if (positions[4] == 1)
+					return 4;
+				else if (positions[3] == 1)
+					return 3;
+			}
+			else if (blackpos == 1) //
+			{
+				if (positions[0] == 1)
+					return 0;
+				else if (positions[4] == 1)
+					return 4;
+				else if (positions[2] == 1)
+					return 2;
+			}
+			else if (blackpos == 2) //
+			{
+				if (positions[1] == 1)
+					return 1;
+				else if (positions[4] == 1)
+					return 4;
+				else if (positions[5] == 1)
+					return 5;
+			}
+			else if (blackpos == 3) //
+			{
+				if (positions[0] == 1)
+					return 0;
+				else if (positions[4] == 1)
+					return 4;
+				else if (positions[6] == 1)
+					return 6;
+			}
+			else if (blackpos == 4) 
+			{
+				if (positions[0] == 1)
+					return 0;
+				else if (positions[1] == 1)
+					return 1;
+				else if (positions[2] == 1)
+					return 2;
+				else if (positions[3] == 1)
+					return 3;
+				else if (positions[4] == 1)
+					return 4;
+				else if (positions[5] == 1)
+					return 5;
+				else if (positions[6] == 1)
+					return 6;
+				else if (positions[7] == 1)
+					return 7;
+				else if (positions[8] == 1)
+					return 8;
+				
+			}
+			else if (blackpos == 5) 
+			{
+				if (positions[2] == 1)
+					return 2;
+				else if (positions[4] == 1)
+					return 4;
+				else if (positions[8] == 1)
+					return 8;
+			}
+			else if (blackpos == 6) //
+			{
+				if (positions[3] == 1)
+					return 3;
+				else if (positions[4] == 1)
+					return 4;
+				else if (positions[7] == 1)
+					return 7;
+			}
+			else if (blackpos == 7) 
+			{
+				if (positions[6] == 1)
+					return 6;
+				else if (positions[4] == 1)
+					return 4;
+				else if (positions[8] == 1)
+					return 8;
+			}
+			else if (blackpos == 8) 
+			{
+				if (positions[7] == 1)
+					return 7;
+				else if (positions[4] == 1)
+					return 4;
+				else if (positions[5] == 1)
+					return 5;
+			}
+			return ret;
+		}
+		
+		private function isBlackWinning():int {
+			var ret:int = -1;
+			var item:int;
+			
+			for (var i:int = 0; i < 9; i++) 
+			{ 
+				if (positions[i]==2) 
+				{
+					positions[i] = 0;
+					if (evaluateWinner(0, positions) == 1) {
+						positions[i] = 2; //revert the change.
+						return i;
+					}
+					positions[i] = 2;
+				} 
+			}
+			
+			return ret;
+		}
+		
+		private function getRandWhiteMarble():int {
+			
+			var ret:int = -1;
+			var pos:int = -1;
+
+			while (true) {
+				pos = FP.rand(9);
+				if (positions[pos] != 1) // assert white player 
+				{
+					continue;
+				}
+			
+			if (pos == 0) 
+			{
+				//check for winning first
+				if (boardmap[1][1] == 0) 
+				{
+					return 0;
+				}
+				else if (boardmap[0][1] == 0) {
+					return 0;
+				}
+				else if (boardmap[1][0]==0)  
+				{
+					return 0;
+				}
+				
+			}
+			else if (pos == 1)
+			{
+				if (boardmap[1][1] == 0) 
+				{
+					return 1;
+				}
+				else if (boardmap[0][0] == 0) {
+					return 1;
+				}
+				else if (boardmap[0][2]==0) 
+				{
+					return 1;
+				}
+				
+			}
+			else if (pos == 2)
+			{
+				if (boardmap[1][1] == 0) 
+				{
+					return 2;
+				}
+				else if (boardmap[0][1] == 0) {
+					return 2;
+				}
+				else if (boardmap[1][2]==0)  
+				{
+					return 2;
+				}
+				
+			}
+			else if (pos == 3)
+			{
+				if (boardmap[1][1] == 0) 
+				{
+					return 3;
+				}
+				else if (boardmap[0][0] == 0) {
+					return 3;
+				}
+				else if (boardmap[2][0]==0)  
+				{
+					return 3;
+				}
+			}
+			else if (pos == 4)
+			{
+				//need some awesome logic here. to be revisited
+				if (boardmap[0][0] == 0) 
+				{
+					return 4;
+				}
+				else if (boardmap[0][1] == 0) {
+					return 4;
+				}
+				else if (boardmap[0][2] == 0) {
+					return 4;
+				}
+				else if (boardmap[1][0]==0)  
+				{
+					return 4;
+				}
+				else if (boardmap[1][2] == 0) {
+					return 4;
+				}
+				else if (boardmap[2][0] == 0) {
+					return 4;
+				}
+				else if (boardmap[2][1] == 0) {
+					return 4;
+				}
+				else if (boardmap[2][2] == 0) {
+					return 4;
+				}
+			}
+			else if (pos == 5)
+			{
+				
+				if (boardmap[1][1] == 0) 
+				{
+					return 5;
+				}
+				else if (boardmap[0][2] == 0) {
+					return 5;
+				}
+				else if (boardmap[2][2]==0)  
+				{
+					return 5;
+				}
+			}
+			else if (pos == 6)
+			{
+				
+				if (boardmap[1][1] == 0) 
+				{
+					return 6;
+				}
+				else if (boardmap[2][1] == 0) {
+					return 6;
+				}
+				else if (boardmap[1][0]==0)  
+				{
+					return 6;
+				}
+			}
+			else if (pos == 7)
+			{
+				
+				if (boardmap[1][1] == 0) 
+				{
+					return 7;
+				}
+				else if (boardmap[2][2] == 0) {
+					return 7;
+				}
+				else if (boardmap[2][0]==0)  
+				{
+					return 7;
+				}
+			}
+			else if (pos == 8)
+			{
+				
+				if (boardmap[1][1] == 0) 
+				{
+					return 8;
+				}
+				else if (boardmap[2][1] == 0) {
+					return 8;
+				}
+				else if (boardmap[1][2]==0)  
+				{
+					return 8;
+				}
+			}
+			}
+
+			return ret;
+		
+		}
+		
+		private function checkInitialWhiteWinning():int {
+			
+			var ret:int = -1;
+			var item:int;
+			
+			for (var i:int = 0; i < 9; i++) 
+			{ 
+				if (positions[i]==2) //if no marble then we place white and check if he wins
+				{
+					positions[i] = 1;
+					if (evaluateWinner(0, positions) == 1) {
+						positions[i] = 2; //revert the change.
+						return i;
+					}
+					positions[i] = 2;
+				} 
+			}
+			
+			return ret;
+		}
+		
+		private function checkBlackWinning():int {
+			
+			var winredobj:int = -1;
+			winredobj = getWinningMove(0); 
+			
+			return winredobj;
 		}
 	}
 
