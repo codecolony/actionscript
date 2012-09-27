@@ -86,7 +86,7 @@ package
 		private var win:Sfx = new Sfx(GV.WIN_SOUND);
 		private var lose:Sfx = new Sfx(GV.LOSE_SOUND);
 		
-		[Embed(source = "assets/board2.jpg")] private const BOARD:Class;
+		[Embed(source = "assets/board740.jpg")] private const BOARD:Class;
 		[Embed(source = "assets/invalidmove4.png")] private const INVALID_MOVE:Class;
 		[Embed(source = "assets/reset4.png")] private const RESET:Class;
 		[Embed(source = "assets/rules4.png")]private const RULES:Class;
@@ -172,45 +172,45 @@ package
 			
 			//hanlde text images. should be moved to a different method
 			rules_image = new Image(RULES);
-			rules_image.scale = 0.6;
-			rules_entity = new Entity(470, 240, rules_image);
+			rules_image.scale = 0.8;
+			rules_entity = new Entity(485, 260, rules_image);
 			add(rules_entity);
 			//rules_entity.visible = false;
 			
 			reset_image = new Image(RESET);
-			reset_image.scale = 0.6;
-			reset_entity = new Entity(470, 170, reset_image);
+			reset_image.scale = 0.8;
+			reset_entity = new Entity(485, 170, reset_image);
 			add(reset_entity);
 			//reset_entity.visible = false;
 			
 			
 			win_image = new Image(YOU_WIN);
-			win_image.scale = 0.6;
-			win_entity = new Entity(470, 70, win_image);
+			win_image.scale = 0.8;
+			win_entity = new Entity(485, 70, win_image);
 			add(win_entity);
 			win_entity.visible = false;
 			
 			lose_image = new Image(YOU_LOSE);
-			lose_image.scale = 0.6;
-			lose_entity = new Entity(470, 70, lose_image);
+			lose_image.scale = 0.8;
+			lose_entity = new Entity(485, 70, lose_image);
 			add(lose_entity);
 			lose_entity.visible = false;
 			
 			invalid_image = new Image(INVALID_MOVE);
-			invalid_image.scale = 0.6;
-			invalid_entity = new Entity(470, 70, invalid_image);
+			invalid_image.scale = 0.8;
+			invalid_entity = new Entity(485, 70, invalid_image);
 			add(invalid_entity);
 			invalid_entity.visible = false;
 			
 			you_image = new Image(YOU_PLAY);
-			you_image.scale = 0.6;
-			you_entity = new Entity(470, 70, you_image);
+			you_image.scale = 0.8;
+			you_entity = new Entity(485, 70, you_image);
 			add(you_entity);
 			//you_entity.visible = false;
 			
 			app_image = new Image(APP_PLAYS);
-			app_image.scale = 0.6;
-			app_entity = new Entity(470, 70, app_image);
+			app_image.scale = 0.8;
+			app_entity = new Entity(485, 70, app_image);
 			add(app_entity);
 			app_entity.visible = false;
 		}
@@ -1351,11 +1351,11 @@ package
 		private function handleMenu():void {
 			if (Input.mousePressed) 
 			{
-				if (Input.mouseX > 470 &&  Input.mouseX < 560 && Input.mouseY > 170 && Input.mouseY < 200) {
+				if (Input.mouseX > 485 &&  Input.mouseX < 629 && Input.mouseY > 170 && Input.mouseY < 211) {
 					FP.world = new GameWorld();
 				}
 				
-				else if (Input.mouseX > 470 &&  Input.mouseX < 560 && Input.mouseY > 240 && Input.mouseY < 270) {
+				else if (Input.mouseX > 484 &&  Input.mouseX < 616 && Input.mouseY > 260 && Input.mouseY < 303) {
 					FP.world = new RulesWorld();
 				}
 			}
@@ -3090,7 +3090,7 @@ package
 				if (positions[i]==2) //if no marble then we place white and check if he wins
 				{
 					positions[i] = 1;
-					if (evaluateWinner(0, positions) == 1) {
+					if (evaluateWinner(1, positions) == 1) {
 						positions[i] = 2; //revert the change.
 						return i;
 					}

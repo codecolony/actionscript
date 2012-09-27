@@ -13,7 +13,7 @@ package
 	 */
 	public class TitleWorld extends World 
 	{
-		[Embed(source = "assets/trapemlogo.png")] private const INTRO:Class;
+		[Embed(source = "assets/trapemlogo740.png")] private const INTRO:Class;
 		[Embed(source = "assets/clicktoplay2.png")] private const CLICK_TO_PLAY:Class;
 		private var intro:Image;
 		private var play:Image;
@@ -26,10 +26,10 @@ package
 		{
 			intro = new Image(INTRO);
 			play = new Image(CLICK_TO_PLAY);
-			play.scale = 0.6;
+			play.scale = 0.5;
 			//intro.scale = 0.85;
 			board = new Entity(0, 0, intro);
-			control = new Entity(210, 435, play);
+			control = new Entity(270, 440, play);
 			FP.screen.color = 0;// 0xffffffff;
 			
 			add(board);

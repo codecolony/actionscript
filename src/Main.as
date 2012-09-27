@@ -15,7 +15,7 @@ import net.flashpunk.FP;
 		//private var intro:Intro = new Intro();
 		public function Main():void 
 		{
-			super(640, 480);
+			super(760, 480);
 			//FP.screen.scale = 1.1;
 			//FP.console.enable();
 			
