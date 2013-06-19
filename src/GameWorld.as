@@ -1,6 +1,7 @@
 package  
 {
 	import flash.display.BitmapData;
+	import flash.ui.Mouse;
 	import net.flashpunk.Entity;
 	import net.flashpunk.graphics.Image;
 	import net.flashpunk.graphics.Text;
@@ -13,6 +14,7 @@ package
 	import GV;
 	import flash.utils.Timer;
 	import flash.events.TimerEvent;
+	import MouseDetector;
 	
 	/**
 	 * ...
@@ -44,13 +46,8 @@ package
 		private var move_rollback:int = -1;
 		private var winblack:int = -1;
 		
-		//private var turn_text:Text;  //text for display
-		//private var turn_text_image:Image;  //text for display
-		//private var turn_text_entity:Image;  //text for display
-		//private var reset:Text;
 		private var reset_image:Image;
 		private var reset_entity:Entity;
-		//private var instruct:Text;
 		private var rules_image:Image;
 		private var rules_entity:Entity;
 		private var win_image:Image;
@@ -70,8 +67,7 @@ package
 		private var prev_move_index:int = -1;
 		private var game_finished:int = 0;
 		private var winning_solution:int  = -1;
-		//private var old_black_move:int = -1;
-		//private var old_old_black_move:int = -1;
+
 		private var black_trap:int = -1;
 		private var old_prev_index:int = -1;
 		
@@ -86,6 +82,8 @@ package
 		private var win:Sfx = new Sfx(GV.WIN_SOUND);
 		private var lose:Sfx = new Sfx(GV.LOSE_SOUND);
 		
+		//private var md:MouseDetector = new MouseDetector(485, 170, reset_image);
+		
 		[Embed(source = "assets/board740.jpg")] private const BOARD:Class;
 		[Embed(source = "assets/invalidmove4.png")] private const INVALID_MOVE:Class;
 		[Embed(source = "assets/reset4.png")] private const RESET:Class;
@@ -99,9 +97,6 @@ package
 		{
 			trace("In game world");
 			
-			//turn_text = new Text("ragha", 470, 70);
-			//turn_text.color = 0;
-			//turn_text.size = 30;
 			boardmap[0]  = new Array();
 			boardmap[0][0] = 0;
 			boardmap[0][1] = 0;
@@ -146,10 +141,6 @@ package
 			add(black1);
 			turn_black =  black1;
 			turn = 0; //black plays first!
-			//turn_text.text  = "You play!";
-			//you_entity.visible = true;
-			
-			//addGraphic(turn_text);
 			
 			blackcount = 0; //black player playing first time.
 			whitecount = 0; //white yet to play!
@@ -175,14 +166,11 @@ package
 			rules_image.scale = 0.8;
 			rules_entity = new Entity(485, 260, rules_image);
 			add(rules_entity);
-			//rules_entity.visible = false;
 			
 			reset_image = new Image(RESET);
 			reset_image.scale = 0.8;
 			reset_entity = new Entity(485, 170, reset_image);
 			add(reset_entity);
-			//reset_entity.visible = false;
-			
 			
 			win_image = new Image(YOU_WIN);
 			win_image.scale = 0.8;
@@ -243,6 +231,7 @@ package
 				}
 				if (Input.mousePressed && turn_black!=null) 
 				{
+					sleep_ms(1000);
 					if (checkValidMoveForInsert(Input.mouseX, Input.mouseY, turn, turn_black, null) == 1) {
 						
 						//move_rollback = 1;
@@ -302,6 +291,7 @@ package
 					//turn_white.x = Input.mouseX-30;
 					//turn_white.y = Input.mouseY-30;
 					//sleep_ms(8000);
+					sleep_ms(1000);
 				}
 				if (turn_white!=null) 
 				{
@@ -619,7 +609,8 @@ package
 						winwhite =  isBlackWinning(); //isblackwinning only if still black moves left
 					}
 					else {
-						winwhite = checkBlackWinning(); //check that ths is not already occupied.
+						winwhite = checkBlackWinning(); 
+						//check that ths is not already occupied.
 						if (positions[winwhite] != 2 && winwhite != -1) 
 						{
 							winwhite = -1;
@@ -633,7 +624,19 @@ package
 					}
 					else {
 						
-						randFreeSpot  = getRandomFreeSpot();
+						//need to check for winning arrangement when blackcount==3
+						if (blackcount==3) 
+						{
+							randFreeSpot  = placeWhiteWinning();
+						}
+						else {
+							randFreeSpot  = getRandomFreeSpot();
+						}
+						if (randFreeSpot==-1) 
+						{
+							randFreeSpot  = getRandomFreeSpot();
+						}
+						
 					}
 				}
 				
@@ -647,7 +650,20 @@ package
 					if (black_trap == 1) 
 					{
 						//randFreeSpot = prev_move_index;
-						randFreeSpot = old_prev_index;
+						if (white_selected_pos != 4) 
+						{
+							randFreeSpot = old_prev_index;
+						}
+						else {
+							//then we find a spot which is closer to white marble.
+							//todo
+							randFreeSpot = getFreePosCloserToWhite(old_prev_index); //this is always from middle // hoping that this always returns valid value
+							if (randFreeSpot == -1) 
+							{
+								randFreeSpot = old_prev_index;
+							}
+						}
+						
 						black_trap = 0;
 					}
 					else {
@@ -656,6 +672,7 @@ package
 							
 							if (winblack != -1) 
 							{
+								//not needed to check if it has moves or not because it is already checked.
 								if (hasMoves(white_selected_pos, winblack) == 1)
 								randFreeSpot = winblack;
 								else
@@ -667,11 +684,12 @@ package
 								
 								randFreeSpot = getWinningMove(1, white_selected_pos); //periphery win but chose 4?!
 								
-								if (positions[white_selected_pos]==2) 
+								/*if (positions[white_selected_pos]==2 && randFreeSpot != 4) 
 								{
-									positions[white_selected_pos] == 1
+									positions[white_selected_pos] = 1;
 									randFreeSpot = getWinningMove(1, white_selected_pos); 
-								}
+									positions[white_selected_pos] = 2;
+								}*/
 								if (randFreeSpot == -1) 
 								{
 									if (old_prev_index != -1) {
@@ -965,6 +983,53 @@ package
 			return retval;
 		}
 		
+		private function placeWhiteWinning():int 
+		{
+			var ret:int = -1;
+			
+			//0-4
+			if (positions[0]==1 && positions[4]==1 && positions[6]==2 && positions[3]==2 )
+			{
+				return 6;
+			}
+			if (positions[0]==1 && positions[4]==1 && positions[2]==2 && positions[1]==2 )
+			{
+				return 2;
+			}
+			
+			//8-4
+			if (positions[8]==1 && positions[4]==1 && positions[6]==2 && positions[7]==2 )
+			{
+				return 6;
+			}
+			if (positions[8]==1 && positions[4]==1 && positions[2]==2 && positions[6]==2 )
+			{
+				return 2;
+			}
+			
+			//6-4
+			if (positions[6]==1 && positions[4]==1 && positions[8]==2 && positions[7]==2 )
+			{
+				return 8;
+			}
+			if (positions[6]==1 && positions[4]==1 && positions[0]==2 && positions[3]==2 )
+			{
+				return 0;
+			}
+			
+			//2-4
+			if (positions[2]==1 && positions[4]==1 && positions[0]==2 && positions[1]==2 )
+			{
+				return 0;
+			}
+			if (positions[2]==1 && positions[4]==1 && positions[8]==2 && positions[5]==2 )
+			{
+				return 8;
+			}
+			
+			return ret;
+		}
+		
 		private function evaluateWinner(player:int, positions:Array):int {
 			
 			var retval:int = 0;
@@ -1066,6 +1131,11 @@ package
 			else if (turn == 1 && game_state == 2) { //game in player marbles moving state
 				
 				randFreeSpot  = getWinningMove(turn);
+				//if middle spot is empty and no winning move if mved to middle then select the marble which has no moves
+				if (randFreeSpot == -1 && positions[4] == 2) 
+				{
+					randFreeSpot = getStuckWhiteMarble();
+				}
 				if(randFreeSpot == -1){ //if there is no winning move then check if opponent is winning and try to block him.
 					winblack = isOpponentWining(0); //returns blank spot to be blocked!
 					//again we need to check if winblack is already occupied.
@@ -1358,7 +1428,20 @@ package
 				else if (Input.mouseX > 484 &&  Input.mouseX < 616 && Input.mouseY > 260 && Input.mouseY < 303) {
 					FP.world = new RulesWorld();
 				}
+				
+				
 			}
+			/*if (reset_entity.collidePoint(485,170,629,211) == true)
+				{
+					//scale
+					reset_image.scale = 1.2;
+				}
+				else {
+					reset_image.scale = 0.8;
+				}*/
+				
+				
+				//md.collidePoint(md.x,md.y,Input.mouseX,Input.mouseY)
 		}
 		
 		private function hasMoves(pos:int, dest:int):int {
@@ -2984,36 +3067,7 @@ package
 					return 3;
 				}
 			}
-			else if (pos == 4)
-			{
-				//need some awesome logic here. to be revisited
-				if (boardmap[0][0] == 0) 
-				{
-					return 4;
-				}
-				else if (boardmap[0][1] == 0) {
-					return 4;
-				}
-				else if (boardmap[0][2] == 0) {
-					return 4;
-				}
-				else if (boardmap[1][0]==0)  
-				{
-					return 4;
-				}
-				else if (boardmap[1][2] == 0) {
-					return 4;
-				}
-				else if (boardmap[2][0] == 0) {
-					return 4;
-				}
-				else if (boardmap[2][1] == 0) {
-					return 4;
-				}
-				else if (boardmap[2][2] == 0) {
-					return 4;
-				}
-			}
+			
 			else if (pos == 5)
 			{
 				
@@ -3074,6 +3128,36 @@ package
 					return 8;
 				}
 			}
+			else if (pos == 4)
+			{
+				//need some awesome logic here. to be revisited
+				if (boardmap[0][0] == 0) 
+				{
+					return 4;
+				}
+				else if (boardmap[0][1] == 0) {
+					return 4;
+				}
+				else if (boardmap[0][2] == 0) {
+					return 4;
+				}
+				else if (boardmap[1][0]==0)  
+				{
+					return 4;
+				}
+				else if (boardmap[1][2] == 0) {
+					return 4;
+				}
+				else if (boardmap[2][0] == 0) {
+					return 4;
+				}
+				else if (boardmap[2][1] == 0) {
+					return 4;
+				}
+				else if (boardmap[2][2] == 0) {
+					return 4;
+				}
+			}
 			}
 
 			return ret;
@@ -3107,6 +3191,152 @@ package
 			winredobj = getWinningMove(0); 
 			
 			return winredobj;
+		}
+		
+		private function getStuckWhiteMarble():int { //typically used when middle spot is empty
+			var ret:int = -1;
+			var one:int = -1;
+			var two:int = -1;
+			
+			if (positions[0] == 1){
+				if(positions[1]==2 && positions[3]==2) 
+				{
+					return 0; //
+				}
+				else if (positions[1] == 2 || positions[3] == 2) {
+					one = 0;
+				}
+			}
+			if (positions[1] == 1) {
+				if (positions[0] == 2 && positions[2] == 2) {
+					return 1; //
+				}
+				else if (positions[0] == 2 || positions[2] == 2) {
+					one = 1;
+				}
+			}
+			
+			if (positions[2] == 1) {
+				if (positions[1] == 2 && positions[5] == 2) {
+					return 2; //
+				}
+				else if (positions[1] == 2 || positions[5] == 2) {
+					one = 2;
+				}
+			}
+			
+			if (positions[3] == 1) {
+				if ( positions[0] == 2 && positions[6] == 2) {
+					return 3; //
+				}
+				else if ( positions[0] == 2 || positions[6] == 2) {
+					one = 3;
+				}
+			}
+			
+			if (positions[5] == 1) {
+				if (positions[2] == 2 && positions[8] == 2) {
+					return 5; //
+				}
+				else if (positions[2] == 2 || positions[8] == 2) {
+					one = 5; //
+				}
+			}
+			
+			if (positions[6] == 1) {
+				if ( positions[3] == 2 && positions[7] == 2) {
+					return 6; //
+				}
+				else if ( positions[3] == 2 || positions[7] == 2) {
+					one =  6; //
+				}
+			}
+			
+			if (positions[7] == 1) {
+				if ( positions[6] == 2 && positions[8] == 2) {
+					return 7; //
+				}
+				else if ( positions[6] == 2 || positions[8] == 2) {
+					one =  7; //
+				}
+			}
+			
+			if (positions[8] == 1) {
+				if ( positions[7] == 2 && positions[5] == 2) {
+					return 8; //
+				}
+				else if ( positions[7] == 2 || positions[5] == 2) {
+					one = 8; //
+				}
+			}
+			
+			if(one != -1)
+			ret = one;
+			
+			return ret;
+		}
+		
+		private function getFreePosCloserToWhite(forbidden:int):int {
+			var ret:int = -1;
+			
+			if (forbidden!=0 && positions[0] == 2) 
+			{
+				if (positions[3]==1 || positions[1]==1) 
+				{
+					return 0;
+				}
+			}
+			else if (forbidden!=1 && positions[1] == 2) 
+			{
+				if (positions[0]==1 || positions[3]==1) 
+				{
+					return 1;
+				}
+			}
+			else if (forbidden!=2 && positions[2] == 2) 
+			{
+				if (positions[2]==1 || positions[5]==1) 
+				{
+					return 2;
+				}
+			}
+			else if (forbidden!=3 && positions[3] == 2) 
+			{
+				if (positions[0]==1 || positions[6]==1) 
+				{
+					return 3;
+				}
+			}
+			else if (forbidden!=5 && positions[5] == 2) 
+			{
+				if (positions[2]==1 || positions[8]==1) 
+				{
+					return 5;
+				}
+			}
+			else if (forbidden!=6 && positions[6] == 2) 
+			{
+				if (positions[3]==1 || positions[7]==1) 
+				{
+					return 6;
+				}
+			}
+			else if (forbidden!=7 && positions[7] == 2) 
+			{
+				if (positions[6]==1 || positions[8]==1) 
+				{
+					return 7;
+				}
+			}
+			else if (forbidden!=8 && positions[8] == 2) 
+			{
+				if (positions[7]==1 || positions[5]==1) 
+				{
+					return 8;
+				}
+			}
+			
+			return ret;
 		}
 	}
 
